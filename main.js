@@ -25,13 +25,11 @@ document.querySelector('#screen').appendChild(canvas)
 /** End Dom creation */
 
 /** Start Variable and Constants creation */
-let count = 0, frame = 0, action = 15, idle = 0, particles = [], explodeParticles = [], offsetToPrevenImageBlink = 2
-export let explodeCluster = []
+let count = 0, frame = 0, action = 15, idle = 0, bombs = [], explodeParticles = [], offsetToPrevenImageBlink = 2
 const gravityMultiplier = 0.1
 export const gravity = 9.81 * gravityMultiplier
-const maxNumberOfparticles = 4
-const walkSpeed = 3
-const runSpeed = 10
+export let explodeCluster = []
+const maxNumberOfparticles = 4, walkSpeed = 3, runSpeed = 10
 const particleImage = new Image()
 particleImage.src = 'img/Red_crystal2.png'
 const background = new Image()
@@ -48,7 +46,7 @@ const keyPressed = {
   hurt: { pressed: false },
   slash: { pressed: false },
   falling: { pressed: false },
-  force: { pressed: false },
+  field: { pressed: false },
 }
 const imageActions = {
   idle: {
@@ -102,22 +100,22 @@ const imageActions = {
     frames: 11
   },
 }
-const imgBlink = readImages(imageActions.blink)
-const imgIdle = readImages(imageActions.idle)
-const imgWalk = readImages(imageActions.walk)
-const imgJump = readImages(imageActions.jump)
-const imgThrow = readImages(imageActions.throw)
-const imgKick = readImages(imageActions.kick)
-const imgHurt = readImages(imageActions.hurt)
-const imgfalling = readImages(imageActions.falling)
-const imgSlashing = readImages(imageActions.slashing)
-const imgStashRun = readImages(imageActions.slashRun)
+const imgBlink = loadImages(imageActions.blink)
+const imgIdle = loadImages(imageActions.idle)
+const imgWalk = loadImages(imageActions.walk)
+const imgJump = loadImages(imageActions.jump)
+const imgThrow = loadImages(imageActions.throw)
+const imgKick = loadImages(imageActions.kick)
+const imgHurt = loadImages(imageActions.hurt)
+const imgfalling = loadImages(imageActions.falling)
+const imgSlashing = loadImages(imageActions.slashing)
+const imgStashRun = loadImages(imageActions.slashRun)
 /** End Variable and Constants creation */
 
 /** Start Function declaration */
-function readImages({ path, file, frames }) {
-  var extension = 'png'
-  var filesArray = []
+function loadImages({ path, file, frames }) {
+  let extension = 'png'
+  let filesArray = []
   for (let index = 0; index <= frames; index++) {
     filesArray[index] = `${path}/${file}${String(index).padStart(3, '0')}.${extension}`
   }
@@ -126,7 +124,7 @@ function readImages({ path, file, frames }) {
 }
 
 function imgInstances(inputArray) {
-  var images = []
+  let images = []
   inputArray.map((element, index) => {
     images.push(new Image)
     images[index].src = element
@@ -135,7 +133,7 @@ function imgInstances(inputArray) {
   return images
 }
 
-function initialize() {
+function imgInitialization() {
   player.images = {
     blinking: imgInstances(imgBlink),
     idle: imgInstances(imgIdle),
@@ -180,8 +178,8 @@ function isFalling() {
 }
 
 function throwBomb() {
-  if (particles.length < maxNumberOfparticles) {
-    particles.push(new Bomb({
+  if (bombs.length < maxNumberOfparticles) {
+    bombs.push(new Bomb({
       position: {
         x: (player.faceToRight ? player.position.x + (player.width / 10) * 6 : player.position.x + (player.width / 10) * 2),
         y: (player.faceToRight ? player.position.y + (player.width / 10) * 5 : player.position.y + (player.width / 10) * 5)
@@ -194,23 +192,24 @@ function throwBomb() {
 }
 
 function bombUpdate() {
-  if (particles.length >= 1) {
-    particles.forEach((particle, index) => {
-      if (particle.decay == 0) {
+  if (bombs.length >= 1) {
+    bombs.forEach((bomb, index) => {
+      if (bomb.decay == 0) {
         for (let i = 0; i < 60; i++) {
           explodeParticles.push(
             new ExplosionParticle({
               position: {
-                x: particle.position.x,
-                y: particle.position.y - particle.velocity.y
+                x: bomb.position.x,
+                y: bomb.position.y - bomb.velocity.y
               }
             })
           );
-          particles.splice(index, 1)
+          console.log(bombs)
         }
+        bombs.splice(index, 1)
       }
-      shadowParticle(particle)
-      particle.update()
+      bombShadow(bomb)
+      bomb.update()
     })
   }
   explosionUpdate()
@@ -221,16 +220,17 @@ function explosionUpdate() {
     explodeParticles.forEach((item, index) => {
       if (item.ttl > item.maxLife) {
         explodeParticles.splice(index, 1)
+      } else {
+        item.r -= 0.001
+        item.update()
       }
-      item.r -= 0.001
-      item.update()
     });
   }
 }
 
 function shadowPlayer(base = 565) {
-  var floorBase = base
-  var posY = Math.abs(player.position.y + player.height - 44)
+  let floorBase = base
+  let posY = Math.abs(player.position.y + player.height - 44)
   // To avoid index incorrect on elipse
   if (player.position.y >= 0) {
     ctx.save()
@@ -242,9 +242,9 @@ function shadowPlayer(base = 565) {
   }
 }
 
-function shadowParticle(item, base = 526) {
-  var floorBase = base
-  var posY = Math.abs(Math.round(item.position.y + item.height) - 11)
+function bombShadow(item, base = 526) {
+  let floorBase = base
+  let posY = Math.abs(Math.round(item.position.y + item.height) - 11)
   // To avoid index incorrect on elipse
   if (player.position.y >= 0) {
     ctx.save()
@@ -293,7 +293,7 @@ function animate() {
 /** End Function declaration */
 
 /** Start call */
-initialize()
+imgInitialization()
 animate()
 /** End call */
 
@@ -335,7 +335,7 @@ window.addEventListener('keypress', (event) => {
       count = 0
       break
     case 'f':
-      keyPressed.force.pressed = true
+      keyPressed.field.pressed = true
       break
     default:
       action = idle
@@ -375,7 +375,7 @@ window.addEventListener('keyup', (event) => {
       action = idle
       break
     case 'f':
-      keyPressed.force.pressed = false
+      keyPressed.field.pressed = false
       break
   }
 })

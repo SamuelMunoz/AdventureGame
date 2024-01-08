@@ -28,12 +28,12 @@ class Sprite {
             kick: { pressed: false },
             slash: { pressed: false },
             falling: { pressed: false },
-            force: { pressed: false }
+            field: { pressed: false }
         }
     }
 
     draw() {
-        if (this.keysPressed.force.pressed) {
+        if (this.keysPressed.field.pressed) {
             this.forceField()
         }
         if (this.isFalling()) {
@@ -53,7 +53,7 @@ class Sprite {
     }
 
     forceField() {
-        var grd = ctx.createRadialGradient(
+        let grd = ctx.createRadialGradient(
             this.position.x + (this.width / 2) + (this.faceToRight ? -10 : 10),
             this.position.y + (this.height / 2),
             this.width / 2,
@@ -199,7 +199,7 @@ class Sprite {
     }
 
     randomBlink() {
-        var rounded = Math.round(Math.random() * 90)
+        let rounded = Math.round(Math.random() * 90)
         return rounded == 10
     }
 }
