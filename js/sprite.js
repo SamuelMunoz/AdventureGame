@@ -76,11 +76,11 @@ class Sprite {
             if (this.keysPressed.slash.pressed) {
                 if (this.isWalk()) {
                     if (this.faceToRight) {
-                        ctx.drawImage(this.images.stashRun[this.count], this.position.x, this.position.y, this.width, this.height)
+                        ctx.drawImage(this.images.slashRun[this.count], this.position.x, this.position.y, this.width, this.height)
                     } else {
                         ctx.save()
                         ctx.scale(-1, 1)
-                        ctx.drawImage(this.images.stashRun[this.count], -this.position.x, this.position.y, -this.width, this.height)
+                        ctx.drawImage(this.images.slashRun[this.count], -this.position.x, this.position.y, -this.width, this.height)
                         ctx.restore()
                     }
                 } else {

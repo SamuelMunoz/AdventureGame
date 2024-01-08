@@ -25,11 +25,13 @@ document.querySelector('#screen').appendChild(canvas)
 /** End Dom creation */
 
 /** Start Variable and Constants creation */
-let count = 0, frame = 0, action = 15, idle = 0, bombs = [], explodeParticles = [], offsetToPrevenImageBlink = 2
+let count = 0, frame = 0, action = 15, idle = 0
+let bombs = [], explodeParticles = [], offsetToPrevenImageBlink = 2
+const actionImages = {}
 const gravityMultiplier = 0.1
 export const gravity = 9.81 * gravityMultiplier
 export let explodeCluster = []
-const maxNumberOfparticles = 4, walkSpeed = 3, runSpeed = 10
+const maxNumberOfBombs = 4, walkSpeed = 3, runSpeed = 10
 const particleImage = new Image()
 particleImage.src = 'img/Red_crystal2.png'
 const background = new Image()
@@ -54,7 +56,7 @@ const imageActions = {
     file: '0_Reaper_Man_Idle_',
     frames: 17
   },
-  blink: {
+  blinking: {
     path: 'img/Reaper_Man_1/PNG/PNG Sequences/Idle Blinking',
     file: '0_Reaper_Man_Idle Blinking_',
     frames: 17
@@ -89,7 +91,7 @@ const imageActions = {
     file: '0_Reaper_Man_Falling Down_',
     frames: 5
   },
-  slashing: {
+  slash: {
     path: 'img/Reaper_Man_1/PNG/PNG Sequences/Slashing',
     file: '0_Reaper_Man_Slashing_',
     frames: 11
@@ -100,29 +102,8 @@ const imageActions = {
     frames: 11
   },
 }
-const imgBlink = loadImages(imageActions.blink)
-const imgIdle = loadImages(imageActions.idle)
-const imgWalk = loadImages(imageActions.walk)
-const imgJump = loadImages(imageActions.jump)
-const imgThrow = loadImages(imageActions.throw)
-const imgKick = loadImages(imageActions.kick)
-const imgHurt = loadImages(imageActions.hurt)
-const imgfalling = loadImages(imageActions.falling)
-const imgSlashing = loadImages(imageActions.slashing)
-const imgStashRun = loadImages(imageActions.slashRun)
-/** End Variable and Constants creation */
 
 /** Start Function declaration */
-function loadImages({ path, file, frames }) {
-  let extension = 'png'
-  let filesArray = []
-  for (let index = 0; index <= frames; index++) {
-    filesArray[index] = `${path}/${file}${String(index).padStart(3, '0')}.${extension}`
-  }
-
-  return filesArray
-}
-
 function imgInstances(inputArray) {
   let images = []
   inputArray.map((element, index) => {
@@ -134,18 +115,15 @@ function imgInstances(inputArray) {
 }
 
 function imgInitialization() {
-  player.images = {
-    blinking: imgInstances(imgBlink),
-    idle: imgInstances(imgIdle),
-    walk: imgInstances(imgWalk),
-    jump: imgInstances(imgJump),
-    throw: imgInstances(imgThrow),
-    kick: imgInstances(imgKick),
-    hurt: imgInstances(imgHurt),
-    slash: imgInstances(imgSlashing),
-    stashRun: imgInstances(imgStashRun),
-    falling: imgInstances(imgfalling),
-  }
+  Object.entries(imageActions).forEach(action => {
+    let filesArray = []
+    const [key, value] = action
+    for (let index = 0; index <= value.frames; index++) {
+      filesArray[index] = `${value.path}/${value.file}${String(index).padStart(3, '0')}.png`
+    }
+    player.images[key] = imgInstances(filesArray)
+  })
+
   action = player.images.idle.length
   idle = player.images.idle.length - offsetToPrevenImageBlink
   count = 0
@@ -178,7 +156,7 @@ function isFalling() {
 }
 
 function throwBomb() {
-  if (bombs.length < maxNumberOfparticles) {
+  if (bombs.length <= maxNumberOfBombs) {
     bombs.push(new Bomb({
       position: {
         x: (player.faceToRight ? player.position.x + (player.width / 10) * 6 : player.position.x + (player.width / 10) * 2),
@@ -196,15 +174,10 @@ function bombUpdate() {
     bombs.forEach((bomb, index) => {
       if (bomb.decay == 0) {
         for (let i = 0; i < 60; i++) {
-          explodeParticles.push(
-            new ExplosionParticle({
-              position: {
-                x: bomb.position.x,
-                y: bomb.position.y - bomb.velocity.y
-              }
-            })
+          explodeParticles.push(new ExplosionParticle({
+            position: { x: bomb.position.x, y: bomb.position.y - bomb.velocity.y }
+          })
           );
-          console.log(bombs)
         }
         bombs.splice(index, 1)
       }
@@ -228,7 +201,7 @@ function explosionUpdate() {
   }
 }
 
-function shadowPlayer(base = 565) {
+function playerShadow(base = 565) {
   let floorBase = base
   let posY = Math.abs(player.position.y + player.height - 44)
   // To avoid index incorrect on elipse
@@ -257,33 +230,24 @@ function bombShadow(item, base = 526) {
 }
 
 function walkAndRunSpeed() {
-  if (frame % (
-    (keyPressed.left.pressed || keyPressed.right.pressed) ? runSpeed * 0.1 : walkSpeed
-  ) == 0) {
-    if (count > action) {
-      count = 0
-    } else {
-      count++
-    }
+  if (frame % ((keyPressed.left.pressed || keyPressed.right.pressed) ? runSpeed * 0.1 : walkSpeed) == 0) {
+    if (count > action) { count = 0 } else { count++ }
   }
 
-  // Reset to avoid overload
   frame++
-  if (frame >= 200000) {
-    frame = 0
-  }
+  if (frame >= 200000) { frame = 0 } // Reset to avoid overload
 }
 
 function animate() {
   requestAnimationFrame(animate)
   ctx.save()
-  ctx.fillStyle = 'rgba(0, 0, 0, 1)'
+  ctx.clearRect = 'black'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.restore()
   if (background) {
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height)
   }
-  shadowPlayer()
+  playerShadow()
   isFalling()
   updatePlayer()
   bombUpdate()
